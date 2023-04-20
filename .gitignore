@@ -127,3 +127,23 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# other
+asphalt.toml
+media
+lib
+test.rbxmx
+default.project.json
+Packages
+wally.toml
+foreman.toml
+test.lock.json
+test.lock
+asphalt.lock.json
+asphalt.lock
+legacy_ids.json
+census_test.json
+sourcemap.json
+types
+out
+*.lock
