@@ -139,17 +139,22 @@ def get_used_paths(is_verbose=False) -> dict[MediaType, list[str]]:
 		
 	return media_usage_path_registry
 
-def update_lock_data(usage_registry: dict[MediaType, list[str]] = {}, reset_unused=False) -> dict[str, str]:
+def update_lock_data(usage_registry: dict[MediaType, list[str]] = {}, is_verbose=False, is_efficient=False) -> dict[str, str]:
+	reset_unused= not is_efficient
 	config_data = get_config_data()
 	lock_data = get_lock_data()
-	
+	if is_verbose:
+		print("update lock data")
+
 	# assemble a registry of all the hashes
 	path_hash_registry: dict[MediaType, dict[str, CensusEntry]] = {}
-	for media_type, path_list in config_data["media"].items():
+	for media_type, media_config in config_data["media"].items():
 		path_hash_registry[media_type] = {}
-		for dir_path in path_list:
+		for dir_path in media_config["sources"]:
+
 			for sub_path, _sub_dir_names, file_names in os.walk(dir_path):
 				for file_name in file_names:
+				
 					file_path = os.path.join(sub_path, file_name).replace("\\", "/")
 					short_path = file_path.replace(dir_path + "/", "")
 					
@@ -161,6 +166,10 @@ def update_lock_data(usage_registry: dict[MediaType, list[str]] = {}, reset_unus
 						"dir_path": dir_path,
 					}
 
+	# if is_verbose:
+	# 	print("path_hash_registry", json.dumps(path_hash_registry, indent=5))
+
+
 	# update lock file with path-hash-registry
 	for media_type, media_registry in path_hash_registry.items():
 		media_lock_tree = lock_data[media_type]
@@ -170,42 +179,45 @@ def update_lock_data(usage_registry: dict[MediaType, list[str]] = {}, reset_unus
 			usage_paths = usage_registry[media_type]
 
 		for media_path, entry in media_registry.items(): 
-			if media_path in media_lock_tree:
-				# update previous entry
-				lock_entry = media_lock_tree[media_path]
-				if lock_entry["hash"] != entry["hash"]:
-					lock_entry["hash"] = entry["hash"]
-					lock_entry["path"] = entry["dir_path"] + "/" + media_path
-					lock_entry["update_needed"] = True
-			else:
-				# add new entry
-				media_lock_tree[media_path] = {
-					"source": entry["dir_path"] + "/" + media_path,
-					"hash": entry["hash"],
-					"asset_id": None,
-					"operation_id": None,
-					"update_needed": True,
-					"is_used": False,
-				}
+			if entry != None:
+				if media_path in media_lock_tree and media_lock_tree[media_path] != None:
+					# update previous entry
+					lock_entry = media_lock_tree[media_path]
+					if lock_entry["hash"] != entry["hash"]:
+						lock_entry["hash"] = entry["hash"]
+						lock_entry["path"] = entry["dir_path"] + "/" + media_path
+						lock_entry["update_needed"] = True
+				else:
+					# add new entry
+					media_lock_tree[media_path] = {
+						"source": entry["dir_path"] + "/" + media_path,
+						"hash": entry["hash"],
+						"asset_id": None,
+						"operation_id": None,
+						"update_needed": True,
+						"is_used": True,
+					}
 
 			# reset if not used
-			if media_lock_tree[media_path]["is_used"]:
-				is_used = False
-				for usage_path in usage_paths:
-					if os.path.commonprefix([media_path, usage_path]) == usage_path:
-						is_used = True
+			if not is_efficient:
+				if media_lock_tree[media_path]["is_used"]:
+					is_used = False
+					for usage_path in usage_paths:
+						if os.path.commonprefix([media_path, usage_path]) == usage_path:
+							is_used = True
 
-				if is_used == False and reset_unused:
-					media_lock_tree[media_path]["is_used"] = False				
+					if is_used == False and reset_unused:
+						media_lock_tree[media_path]["is_used"] = False				
 
 	# use the usage_paths to mass-update all used items
-	for media_type, usage_paths in usage_registry.items():
-		media_lock_tree = lock_data[media_type]
-		for usage_path in usage_paths:
-			for media_path in media_lock_tree:
-				is_accessed_by_path = os.path.commonprefix([media_path, usage_path]) == usage_path
-				if is_accessed_by_path:
-					media_lock_tree[media_path]["is_used"] = True
+	if is_efficient:
+		for media_type, usage_paths in usage_registry.items():
+			media_lock_tree = lock_data[media_type]
+			for usage_path in usage_paths:
+				for media_path in media_lock_tree:
+					is_accessed_by_path = os.path.commonprefix([media_path, usage_path]) == usage_path
+					if is_accessed_by_path:
+						media_lock_tree[media_path]["is_used"] = True
 
 	# update lock file
 	set_lock_data(lock_data)	

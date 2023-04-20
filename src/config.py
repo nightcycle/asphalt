@@ -7,7 +7,6 @@ import keyring
 
 CONFIG_PATH = "asphalt.toml"
 LOCK_PATH = "asphalt.lock"
-AUTH_LOCK_PATH = "asphalt-auth.lock"
 
 INITIAL_LOCK_CONFIG = {
 	"audio": {},
@@ -116,7 +115,6 @@ def init():
 	with open(CONFIG_PATH, "w") as file:
 		file.write(toml.dumps(INITIAL_CONFIG))
 
-	keyring.set_password(ROBLOX_ASSET_KEY_CREDENTIAL_NAME, ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME, input("paste your open-cloud asset key: "))
 
 def get_asset_auth_key() -> str:
 	return keyring.get_password(ROBLOX_ASSET_KEY_CREDENTIAL_NAME, ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME)
