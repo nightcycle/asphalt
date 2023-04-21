@@ -4,7 +4,7 @@ import keyring
 from audit import get_used_paths, update_lock_data
 from config import init, LOCK_PATH, get_asset_auth_key, ROBLOX_ASSET_KEY_CREDENTIAL_NAME, ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME
 from util import expand_into_directory, group_directory
-from library import build_library_directory
+from library import build_library_directory, build_library_module
 
 def main():
 	if sys.argv[1] == "init":
@@ -24,6 +24,7 @@ def main():
 		
 		if is_build:
 			build_library_directory(is_efficient, is_verbose, skip_upload)
+			build_library_module(is_efficient, is_verbose)
 	elif sys.argv[1] == "expand":
 
 		model_path = sys.argv[2]

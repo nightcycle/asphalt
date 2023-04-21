@@ -10,7 +10,7 @@ def yield_for_asset_id(publisher: Publisher, operation_id: int, is_verbose:bool)
 	asset_id: None | int = None
 	attempts = 0
 	while asset_id == None and attempts < 10:
-		sleep_duration = 0.5 + attempts*2.5
+		sleep_duration = 0.5 + attempts*0.5
 		sleep(sleep_duration)
 		attempts += 1
 		asset_id = publisher.get_asset_id_from_operations_id(operation_id)
@@ -148,7 +148,7 @@ def build_image(asset_data: AssetData, build_path: str, is_verbose: bool, skip_u
 		if is_verbose:
 			print(f"building {build_path}")
 
-		text = get_asset_url_from_id(asset_id)
+		text = f"\"{get_asset_url_from_id(asset_id)}\""
 		with open(build_path, "w") as file:
 			file.write(text)
 
