@@ -3,7 +3,6 @@ certifi==2022.12.7
 charset-normalizer==3.1.0
 dpath==2.1.5
 idna==3.4
-importlib-metadata==6.5.0
 jaraco.classes==3.2.3
 keyring==23.13.1
 luau==0.4.19
