@@ -2,7 +2,19 @@ import os
 import json
 import hashlib
 import base64
+import sys
 from typing import TypedDict, Literal, Any
+
+MODEL_EXTENSIONS = [".rbxm", ".rbxmx"]
+APPROVED_EXPORT_EXTENSIONS_REGISTRY = {
+	"audio": [".ogg", ".mp3"],
+	"image": [".png",".jpeg", ".bmp", ".tga"],
+	"material": MODEL_EXTENSIONS,
+	"animation": MODEL_EXTENSIONS,
+	"mesh": MODEL_EXTENSIONS,
+	"model": MODEL_EXTENSIONS,
+	"particle": MODEL_EXTENSIONS,
+}
 
 RemodelType = Literal[
 	"String",
@@ -20,14 +32,35 @@ RemodelType = Literal[
 class AssetData(TypedDict):
 	source: str
 	hash: str
-	asset_id: str | None
+	asset_id: int | None
 	operation_id: str | None
 	update_needed: bool
 	is_used: bool
+	dependents: list[str] | None #used to determine if this is a source file, and which other files are built from it
+	source_origin: str | None #used to determine if this was generated from another file, rather than the source
 
 class RemodelValue(TypedDict):
 	type: RemodelType
 	value: Any
+
+def get_data_file_path(file_name: str) -> str:
+	base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+	return os.path.join(base_path, f"data\\{file_name}").replace("\\", "/")
+
+def run_exe_process(exe_name: str, args: list = [], silent=True):
+	abs_path = get_data_file_path(exe_name)
+	abs_dir = os.path.split(abs_path)[0]
+
+	command = " ".join([abs_path] + args)
+
+	if silent:
+		command = command.replace("\"", "\\\"")
+		bash_command = f"bash -c \"{command} > /dev/null 2>&1\""
+		# print(f"bash_cmd: {bash_command}")
+		os.system(bash_command)
+	else:
+		print("cmd: ",command)
+		os.system(command)
 
 def get_file_hash(path: str):
 	with open(path, "rb") as file:
@@ -36,12 +69,6 @@ def get_file_hash(path: str):
 def get_asset_url_from_id(asset_id: int):
 	return f"rbxassetid://{asset_id}"
 
-def get_rbxmk_path() -> str:
-	return os.path.abspath("bin/rbxmk.exe").replace("\\", "/")
-
-def get_remodel_path() -> str:
-	return os.path.abspath("bin/remodel.exe").replace("\\", "/")
-
 def convert_to_roblox_ext(file_path: str, goal_ext: str, is_model: bool) -> str:
 	base, ext = os.path.splitext(file_path)
 	if ext == goal_ext:
@@ -49,7 +76,7 @@ def convert_to_roblox_ext(file_path: str, goal_ext: str, is_model: bool) -> str:
 	else:
 		out_path = base + goal_ext
 		bool_str = str(is_model).lower()
-		os.system(f"{get_remodel_path()} run tool_scripts/convert.remodel.lua {file_path} {out_path} {bool_str}")
+		run_exe_process("remodel.exe", ["run", get_data_file_path("convert.remodel.lua"), file_path, out_path, bool_str])
 		os.remove(file_path)
 		return out_path
 
@@ -73,21 +100,29 @@ def group_directory(directory_path: str, folder_class_name="Folder", ext="rbxm")
 	if os.path.exists(file_path):
 		os.remove(file_path)
 
-	os.system(f"{get_remodel_path()} run tool_scripts/group_directory.remodel.lua {directory_path} {folder_class_name} {ext}")
+	run_exe_process("remodel.exe", ["run", get_data_file_path("group_directory.remodel.lua"), directory_path, folder_class_name, ext])
 
 def expand_into_directory(model_file: str, folder_class_name="Folder"):
 	out_directory, ext_name = os.path.splitext(model_file)
 	if not os.path.exists(out_directory):
 		os.makedirs(out_directory)
-	os.system(f"{get_remodel_path()} run tool_scripts/expand_instance.remodel.lua {model_file} {folder_class_name} {out_directory} {ext_name[1:]}")
 
-def write_model_asset(build_path: str, class_name: str, inst_config: RemodelValue):
+	run_exe_process("remodel.exe", ["run", get_data_file_path("expand_instance.remodel.lua"), model_file, folder_class_name, out_directory, ext_name[1:]])
+
+def write_model_asset(build_path: str, class_name: str, inst_config: dict[str, RemodelValue]):
+	if "." in build_path:
+		base, ext = os.path.splitext(build_path)
+		build_path = base + ".rbxm"
+	else:
+		build_path = build_path + ".rbxm"
+
+
 	if os.path.exists(build_path):
 		os.remove(build_path)
 
 	json_str = json.dumps(inst_config).replace("\n", "").replace(" ", "").replace("\"", "'")
-	os.system(f"{get_remodel_path()} run tool_scripts/build_instance.remodel.lua {build_path} {class_name} {json_str}")
-
+	
+	run_exe_process("remodel.exe", ["run", get_data_file_path("build_instance.remodel.lua"), build_path, class_name, f"\"{json_str}\""])
 
 def decode_tags(bin_str: str) -> list[str]:
     def get_bytes_from_binary_str(bin_str: str) -> bytes:

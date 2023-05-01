@@ -1,2 +1,1 @@
-
-pyinstaller --onefile src/__init__.py -n asphalt
+pyinstaller --onefile src/__init__.py -n asphalt --additional-hooks-dir=hooks --add-data "src/data/ffmpeg.exe;data/" --add-data "src/data/rbxmk.exe;data/" --add-data "src/data/remodel.exe;data/" --add-data "src/data/build_instance.remodel.lua;data/" --add-data "src/data/convert.remodel.lua;data/" --add-data "src/data/expand_instance.remodel.lua;data/" --add-data "src/data/group_directory.remodel.lua;data/"

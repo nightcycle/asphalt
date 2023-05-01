@@ -1,0 +1,2 @@
+# src/data/remodel.exe run src/data/build_instance.remodel.lua lib/Audio/UI/Navigation/Cancel.rbxmx Sound "{'SoundId':{'type':'Content','value':'rbxassetid://12017250007'},'Name':{'type':'String','value':'Cancel'}}" > /dev/null 2>&1
+bash -c "src/data/remodel.exe run src/data/build_instance.remodel.lua lib/Audio/UI/Navigation/Cancel.rbxmx Sound \"{'SoundId':{'type':'Content','value':'rbxassetid://12017250007'},'Name':{'type':'String','value':'Cancel'}}\" > /dev/null 2>&1"

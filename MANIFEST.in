@@ -1,0 +1,7 @@
+recursive-include src/data ffmpeg.exe
+recursive-include src/data rbxmk.exe
+recursive-include src/data remodel.exe
+recursive-include src/data build_instance.remodel.lua
+recursive-include src/data convert.remodel.lua
+recursive-include src/data expand_instance.remodel.lua
+recursive-include src/data group_directory.remodel.lua

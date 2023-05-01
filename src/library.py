@@ -1,13 +1,16 @@
 import shutil
 import json
 import os
+import dpath
 from luau.convert import mark_as_literal,from_any
+from luau.roblox import write_script
+from luau.path import remove_all_path_variants
 from luau.roblox.util import get_module_require, get_instance_from_path
-from luau.roblox.rojo import get_roblox_path_from_env_path
-from config import get_lock_data, get_config_data, set_lock_data
-
-# from audit import get_file_hash
-from builder import build_animation, build_audio, build_image, build_material, build_mesh, build_model, build_particle
+from luau.roblox.rojo import get_roblox_path_from_env_path, build_sourcemap, get_rojo_project_path
+from src.util import AssetData
+from src.config import get_lock_data, get_config_data, set_lock_data
+from src.builder import build_animation, build_audio, build_image, build_material, build_mesh, build_model, build_particle, upload_audio, upload_image
+from typing import Any
 
 def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: bool):
 
@@ -16,67 +19,206 @@ def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: b
 	build_path = config_data['build']['dir_path']
 	
 	print(f"editing {build_path} directory")
-	
+
+	if not skip_upload:	
+		if is_verbose:
+			print("uploading audio assets")
+
+		for path, entry in lock_data['audio'].items():
+			if not 'asset_id' in entry or entry['asset_id'] == None:
+				# if is_verbose:
+				# 	print(f"\nuploading {path} with {skip_upload} and {is_efficient}")
+				# 	print(json.dumps(entry))
+				lock_data['audio'][path] = upload_audio(entry, is_verbose)
+
+		if is_verbose:
+			print("uploading image assets")
+
+		for path, entry in lock_data['image'].items():
+			if not 'asset_id' in entry or entry['asset_id'] == None:
+				lock_data['image'][path] = upload_image(entry, is_verbose)
+
+	if is_verbose:
+		print("building animation dir")
+
 	for path, entry in lock_data['animation'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['animation'][path] = build_animation(entry, build_path + "/Animation/" + path, is_verbose)
 
+	if is_verbose:
+		print("building audio dir")
+
+
 	for path, entry in lock_data['audio'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['audio'][path] = build_audio(entry, build_path + "/Audio/" + path, is_verbose, skip_upload)
-			set_lock_data(lock_data)
+
+	if is_verbose:
+		print("building image dir")
 
 	for path, entry in lock_data['image'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['image'][path] = build_image(entry, build_path + "/Image/" + path, is_verbose, skip_upload)
-			set_lock_data(lock_data)
+
+
+	if is_verbose:
+		print("building material dir")
 
 	for path, entry in lock_data['material'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['material'][path] = build_material(entry, build_path + "/Material/" + path, is_verbose)
 
+	if is_verbose:
+		print("building mesh dir")
+
 	for path, entry in lock_data['mesh'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['mesh'][path] = build_mesh(entry, build_path + "/Mesh/" + path, is_verbose)
 
+	if is_verbose:
+		print("building model dir")
+
 	for path, entry in lock_data['model'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['model'][path] = build_model(entry, build_path + "/Model/" + path, is_verbose)
 
+	if is_verbose:
+		print("building particle dir")
+
 	for path, entry in lock_data['particle'].items():
-		if entry['update_needed'] and (not is_efficient or entry['is_used']):	
+		if not is_efficient or entry['is_used']:	
 			lock_data['particle'][path] = build_particle(entry, build_path + "/Particle/" + path, is_verbose)
+
+	if is_verbose:
+		print("setting lock data")
 
 	set_lock_data(lock_data)
 
 def build_library_module(is_efficient: bool, is_verbose: bool):
 	config_data = get_config_data()
+	lock_data = get_lock_data()
 	build_path = config_data['build']['module_path']
 	dir_path = config_data['build']['dir_path']
 
 	base_path = get_roblox_path_from_env_path(dir_path)
 
 	# path_registry = {}
-	module_registry = {}
+	module_registry: dict = {}
+	tree_registry: dict = {}
+	if is_verbose:
+		print("converting paths to roblox instance indeces")
 
+	# adding asset including modules
 	for sub_path, _sub_dir_names, file_names in os.walk(dir_path):
 		for file_name in file_names:
 			file_path = os.path.join(sub_path, file_name).replace("\\", "/")
 			base, ext = os.path.splitext(file_path)
-			name = os.path.splitext(os.path.split(file_path)[1])[0]
+			name = os.path.splitext(file_name)[0]
 			roblox_path = get_roblox_path_from_env_path(base)
 
 			key_path = roblox_path.replace(base_path+"/", "")
-			par_dir_path = "/".join(key_path.split("/")[0:(len(key_path.split("/"))-1)])
-			if not par_dir_path in module_registry:
-				module_registry[par_dir_path] = {}
+			par_dir_path = os.path.split(key_path)[0]#"/".join(key_path.split("/")[0:(len(key_path.split("/"))-1)])
 
-			if ext == ".txt":
-				with open(file_path, "r") as file:
-					module_registry[par_dir_path][name] = mark_as_literal(file.read())
-			elif ext == ".rbxmx" or ext == ".rbxm":
-				module_registry[par_dir_path][name] = mark_as_literal(get_instance_from_path(roblox_path))
+			is_safe_to_add = True
+			
+			if is_efficient:
+				media_type = key_path.split("/")[0].lower()
+				post_media_path = os.path.splitext("/".join(key_path.split("/")[1:]))[0]
+				if media_type in lock_data:
+					untyped_lock_data: Any = lock_data
+					lock_registry = untyped_lock_data[media_type]
+					if post_media_path in lock_registry:
+						asset_data: AssetData = lock_registry[post_media_path]
+						if not asset_data["is_used"]:
+							is_safe_to_add = False
 
+			if is_safe_to_add:
+				if not par_dir_path in module_registry:
+					module_registry[par_dir_path] = {}
+
+				out_type: str | None = None
+				start_media_type = par_dir_path.split("/")[0]
+				if start_media_type == "Model":
+					out_type = "Instance"
+				elif start_media_type == "Animation":
+					out_type = "Animation"
+				elif start_media_type == "Audio":
+					out_type = "Sound"
+				# elif start_media_type == "Image":
+				elif start_media_type == "Material":
+					out_type = "MaterialVariant"	
+				elif start_media_type == "Particle":	
+					out_type = "ParticleEmitter"	
+
+				type_suffix = ""
+				if out_type != None:
+					type_suffix = f" :: {out_type}"
+
+				# print(start_media_type, out_type, type_suffix)
+
+				# print(par_dir_path)
+				if ext == ".txt":
+					with open(file_path, "r") as file:
+						module_registry[par_dir_path][name] = mark_as_literal(file.read() + type_suffix)
+						dpath.new(tree_registry, par_dir_path, {})
+
+				elif ext == ".rbxmx" or ext == ".rbxm":
+					module_registry[par_dir_path][name] = mark_as_literal(get_instance_from_path(roblox_path) + type_suffix)
+					dpath.new(tree_registry, par_dir_path, {})
+
+	# registering middle-modules
 	if is_verbose:
-		print(from_any(module_registry, skip_initial_indent=False))
-		# print(json.dumps(path_registry, indent=5))
+		print("registering middle modules")
+	
+	for path, value in dpath.search(tree_registry, '**', yielded=True):
+		if not path in module_registry:
+			module_registry[path] = {}
+
+	# adding requires to modules
+	if is_verbose:
+		print("connecting middle modules")
+
+	for path, registry in module_registry.items():
+		for sub_path in module_registry:
+			dir_path, name = os.path.split(sub_path)
+			if dir_path == path:
+				if not name in registry:
+					registry[name] = mark_as_literal(f"require(script:WaitForChild(\"{name}\"))")
+	
+	# building modules
+	if is_verbose:
+		print("building module scripts")
+
+	build_base, build_ext = os.path.splitext(build_path)
+	remove_all_path_variants(build_path)
+
+	build_order: list[str] = list(module_registry.keys())
+	build_order.sort()
+
+	for path in build_order:
+		registry = module_registry[path]
+
+		tree_content = "return " + from_any(registry, skip_initial_indent=True)
+		get_rep_str = "game:GetService(\"ReplicatedStorage\")"
+		rep_var_name = "ReplicatedStorage"
+		tree_content = tree_content.replace(get_rep_str, rep_var_name)
+		content = [
+			"--!strict",
+			"-- Do not edit - this script was generated by @nightcycle/asphalt"
+		]
+		if rep_var_name in tree_content:
+			content.append(f"local {rep_var_name} = {get_rep_str}")
+		content.append(tree_content)
+		module_build_path = build_base + "/" + path + build_ext
+		
+		write_script(module_build_path, "\n".join(content), write_as_directory=True, skip_source_map=True)
+		# if is_verbose:
+		# 	print(f"building {module_build_path}")
+
+	# with open("module_registry.json", "w") as mod_file:
+	# 	mod_file.write(json.dumps(module_registry, indent=5))
+
+	# with open("tree_registry.json", "w") as tree_file:
+	# 	tree_file.write(json.dumps(tree_registry, indent=5))
+
+	build_sourcemap(get_rojo_project_path())
