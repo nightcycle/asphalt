@@ -203,6 +203,13 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 				if not name in registry:
 					registry[name] = mark_as_literal(f"require(script:WaitForChild(\"{name}\"))")
 	
+	if is_efficient:
+		for media_type, dir_path in dir_path_registry.items():
+			if os.path.exists(dir_path):
+				if is_verbose:
+					print(f"erasing previous {dir_path}")
+				shutil.rmtree(dir_path)
+
 	# building modules
 	if is_verbose:
 		print("building module scripts")
