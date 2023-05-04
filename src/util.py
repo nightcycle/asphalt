@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 import base64
+import shutil
 import sys
 from typing import TypedDict, Literal, Any
 
@@ -101,6 +102,9 @@ def group_directory(directory_path: str, folder_class_name="Folder", ext="rbxm")
 		os.remove(file_path)
 
 	run_exe_process("remodel.exe", ["run", get_data_file_path("group_directory.remodel.lua"), directory_path, folder_class_name, ext])
+	if folder_class_name=="SoundGroup":
+		run_exe_process("rbxmk.exe", ["run", get_data_file_path("format_sound_tree.rbxmk.lua"), directory_path+"."+ext])
+	shutil.rmtree(directory_path)
 
 def expand_into_directory(model_file: str, folder_class_name="Folder"):
 	out_directory, ext_name = os.path.splitext(model_file)
