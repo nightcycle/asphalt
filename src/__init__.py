@@ -18,6 +18,7 @@ def main():
 		is_efficient = "-efficient" in sys.argv	
 		is_build = "-build" in sys.argv
 		skip_upload = "-local" in sys.argv
+		force_upload = "-force" in sys.argv
 		start_hash = get_file_hash(LOCK_PATH)
 		if is_efficient:
 			usage_registry = get_used_paths(is_verbose)
@@ -26,9 +27,9 @@ def main():
 			update_lock_data(is_efficient=is_efficient, is_verbose=is_verbose, skip_upload=skip_upload)	
 		finish_hash = get_file_hash(LOCK_PATH)
 		if is_build:
-			if start_hash != finish_hash:
+			if start_hash != finish_hash or force_upload:
 				print("building module")
-				build_library_directory(is_efficient, is_verbose, skip_upload)
+				build_library_directory(is_efficient, is_verbose, skip_upload, force_upload)
 				build_library_module(is_efficient, is_verbose)
 			else:
 				print("no changes detected, skipping module build")
@@ -58,7 +59,7 @@ def main():
 					file_path = os.path.join(sub_path, file_name).replace("\\", "/")
 					if is_verbose:
 						print(f"unpacking {file_path}")
-					expand_into_directory(path)
+					expand_into_directory(path)	
 
 # prevent from running twice
 if __name__ == '__main__':

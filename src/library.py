@@ -12,7 +12,7 @@ from src.config import get_lock_data, get_config_data, set_lock_data
 from src.builder import build_animation, build_audio, build_image, build_material, build_mesh, build_model, build_particle, upload_audio, upload_image
 from typing import Any
 
-def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: bool):
+def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: bool, force_upload: bool):
 
 	config_data = get_config_data()
 	lock_data = get_lock_data()
@@ -20,23 +20,28 @@ def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: b
 	
 	print(f"editing {build_path} directory")
 
-	if not skip_upload:	
+	if not skip_upload or force_upload:	
 		if is_verbose:
 			print("uploading audio assets")
-
 		for path, entry in lock_data['audio'].items():
 			if not 'asset_id' in entry or entry['asset_id'] == None:
 				# if is_verbose:
 				# 	print(f"\nuploading {path} with {skip_upload} and {is_efficient}")
 				# 	print(json.dumps(entry))
-				lock_data['audio'][path] = upload_audio(entry, is_verbose)
+				try:
+					lock_data['audio'][path] = upload_audio(entry, is_verbose)
+				except:
+					print(f"audio upload failed: {path}")
 
 		if is_verbose:
 			print("uploading image assets")
 
 		for path, entry in lock_data['image'].items():
 			if not 'asset_id' in entry or entry['asset_id'] == None:
-				lock_data['image'][path] = upload_image(entry, is_verbose)
+				try:
+					lock_data['image'][path] = upload_image(entry, is_verbose)
+				except:
+					print(f"image upload failed: {path}")
 
 	if is_verbose:
 		print("building animation dir")
@@ -117,8 +122,7 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 			roblox_path = get_roblox_path_from_env_path(base)
 
 			key_path = roblox_path.replace(base_path+"/", "")
-			par_dir_path = os.path.split(key_path)[0]#"/".join(key_path.split("/")[0:(len(key_path.split("/"))-1)])
-
+			par_dir_path = os.path.split(key_path)[0]
 			is_safe_to_add = True
 			
 			if is_efficient:
