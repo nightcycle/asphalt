@@ -209,6 +209,7 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 				if is_verbose:
 					print(f"erasing previous {dir_path}")
 				shutil.rmtree(dir_path)
+				os.makedirs(dir_path)
 
 	# building modules
 	if is_verbose:
