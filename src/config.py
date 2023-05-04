@@ -69,7 +69,10 @@ class LockData(TypedDict):
 	particle: dict[str, AssetData]
 	animation: dict[str, AssetData]
 
+
 class MediaConfig(TypedDict):
+	dir_path: str | None
+	compression_directory_instance: str | None
 	sources: list[str]
 
 class MediaDirectoryConfig(TypedDict):

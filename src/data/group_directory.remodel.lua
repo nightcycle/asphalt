@@ -3,6 +3,7 @@ local ARGS = {...}
 local DIRECTORY_FILE_PATH = ARGS[1]
 local FOLDER_CLASS_NAME = ARGS[2]
 local FILE_EXT = ARGS[3]
+print(DIRECTORY_FILE_PATH, FOLDER_CLASS_NAME, FILE_EXT)
 
 -- for some reason string.split doesn't work, so here it is rewritten
 function stringSplit(str, delimiter)
@@ -39,9 +40,9 @@ function groupDirectory(directoryPath)
 				child.Parent = folderInst
 
 				-- why would you parent it under a sound group if you weren't going to set it
-				if child.ClassName == "Sound" and FOLDER_CLASS_NAME == "SoundGroup" then
-					child.SoundGroup = folderInst
-				end
+				-- if child.ClassName == "Sound" and FOLDER_CLASS_NAME == "SoundGroup" then
+				-- 	child.SoundGroup = folderInst
+				-- end
 			end
 
 		elseif remodel.isDir(path) then

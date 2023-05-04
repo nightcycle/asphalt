@@ -340,3 +340,5 @@ def update_lock_data(usage_registry: dict[MediaType, list[str]] = {}, is_verbose
 
 	# update lock file
 	set_lock_data(lock_data)	
+
+

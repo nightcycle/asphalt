@@ -4,9 +4,9 @@ import multiprocessing
 import json
 import keyring
 from src.audit import get_used_paths, update_lock_data
-from src.config import init, LOCK_PATH, get_asset_auth_key, ROBLOX_ASSET_KEY_CREDENTIAL_NAME, ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME, get_lock_data
+from src.config import init, LOCK_PATH, get_config_data, get_asset_auth_key, ROBLOX_ASSET_KEY_CREDENTIAL_NAME, ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME, get_lock_data
 from src.util import expand_into_directory, group_directory, MODEL_EXTENSIONS, get_file_hash
-from src.library import build_library_directory, build_library_module
+from src.library import build_library_directory, build_library_module, get_dir_paths_by_media_type
 
 def main():
 	is_verbose = "-verbose" in sys.argv
@@ -18,7 +18,7 @@ def main():
 		is_efficient = "-efficient" in sys.argv	
 		is_build = "-build" in sys.argv
 		skip_upload = "-local" in sys.argv
-		force_upload = "-force" in sys.argv
+		force = "-force" in sys.argv
 		start_hash = get_file_hash(LOCK_PATH)
 		if is_efficient:
 			usage_registry = get_used_paths(is_verbose)
@@ -26,13 +26,39 @@ def main():
 		else:
 			update_lock_data(is_efficient=is_efficient, is_verbose=is_verbose, skip_upload=skip_upload)	
 		finish_hash = get_file_hash(LOCK_PATH)
+		
+		if start_hash != finish_hash or force:
+			config_data = get_config_data()
+			dir_path_registry = get_dir_paths_by_media_type()
+			for media_type, media_data in config_data["media"].items():
+				if "compression_directory_instance" in media_data:
+					folder_class = media_data["compression_directory_instance"]
+					media_dir = dir_path_registry[media_type]
+					comp_file = media_dir + ".rbxm"
+					if os.path.exists(comp_file):
+						if is_verbose:
+							print(f"unpacking {media_type} directory")
+						expand_into_directory(comp_file, folder_class)
+
 		if is_build:
-			if start_hash != finish_hash or force_upload:
+			if start_hash != finish_hash or force:
 				print("building module")
-				build_library_directory(is_efficient, is_verbose, skip_upload, force_upload)
+				build_library_directory(is_efficient, is_verbose, skip_upload, force)
 				build_library_module(is_efficient, is_verbose)
 			else:
 				print("no changes detected, skipping module build")
+
+		if start_hash != finish_hash or force:
+			config_data = get_config_data()
+			dir_path_registry = get_dir_paths_by_media_type()
+			for media_type, media_data in config_data["media"].items():
+				if "compression_directory_instance" in media_data:
+					folder_class = media_data["compression_directory_instance"]
+					media_dir = dir_path_registry[media_type]
+					if os.path.exists(media_dir):
+						if is_verbose:
+							print(f"packing {media_type} directory into rbxm")
+						group_directory(media_dir, folder_class, ext="rbxm")
 
 	elif sys.argv[1] == "expand":
 
