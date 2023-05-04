@@ -58,7 +58,7 @@ def main():
 					if os.path.exists(media_dir):
 						if is_verbose:
 							print(f"packing {media_dir} directory into rbxm")
-						group_directory(media_dir, folder_class, ext="rbxm", is_verbose)
+						group_directory(media_dir, folder_class, ext="rbxm", is_verbose=is_verbose)
 
 	elif sys.argv[1] == "expand":
 
