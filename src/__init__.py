@@ -37,8 +37,8 @@ def main():
 					comp_file = media_dir + ".rbxm"
 					if os.path.exists(comp_file):
 						if is_verbose:
-							print(f"unpacking {media_type} directory")
-						expand_into_directory(comp_file, folder_class)
+							print(f"unpacking {comp_file} directory")
+						expand_into_directory(comp_file, folder_class, is_verbose)
 
 		if is_build:
 			if start_hash != finish_hash or force:
@@ -57,8 +57,8 @@ def main():
 					media_dir = dir_path_registry[media_type]
 					if os.path.exists(media_dir):
 						if is_verbose:
-							print(f"packing {media_type} directory into rbxm")
-						group_directory(media_dir, folder_class, ext="rbxm")
+							print(f"packing {media_dir} directory into rbxm")
+						group_directory(media_dir, folder_class, ext="rbxm", is_verbose)
 
 	elif sys.argv[1] == "expand":
 

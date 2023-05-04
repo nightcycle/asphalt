@@ -93,7 +93,7 @@ def convert_to_rbxmx(file_path: str) -> str:
 def convert_to_rbxm(file_path: str) -> str:
 	return convert_to_roblox_ext(file_path, ".rbxm", True)
 
-def group_directory(directory_path: str, folder_class_name="Folder", ext="rbxm"):
+def group_directory(directory_path: str, folder_class_name="Folder", ext="rbxm", is_verbose=False):
 	if ext[0] == ".":
 		ext = ext[1:]
 		
@@ -101,17 +101,17 @@ def group_directory(directory_path: str, folder_class_name="Folder", ext="rbxm")
 	if os.path.exists(file_path):
 		os.remove(file_path)
 
-	run_exe_process("remodel.exe", ["run", get_data_file_path("group_directory.remodel.lua"), directory_path, folder_class_name, ext])
+	run_exe_process("remodel.exe", ["run", get_data_file_path("group_directory.remodel.lua"), directory_path, folder_class_name, ext], silent = not is_verbose)
 	if folder_class_name=="SoundGroup":
-		run_exe_process("rbxmk.exe", ["run", get_data_file_path("format_sound_tree.rbxmk.lua"), directory_path+"."+ext])
+		run_exe_process("rbxmk.exe", ["run", get_data_file_path("format_sound_tree.rbxmk.lua"), directory_path+"."+ext], silent = not is_verbose)
 	shutil.rmtree(directory_path)
 
-def expand_into_directory(model_file: str, folder_class_name="Folder"):
+def expand_into_directory(model_file: str, folder_class_name="Folder", is_verbose=False):
 	out_directory, ext_name = os.path.splitext(model_file)
 	if not os.path.exists(out_directory):
 		os.makedirs(out_directory)
 
-	run_exe_process("remodel.exe", ["run", get_data_file_path("expand_instance.remodel.lua"), model_file, folder_class_name, out_directory, ext_name[1:]])
+	run_exe_process("remodel.exe", ["run", get_data_file_path("expand_instance.remodel.lua"), model_file, folder_class_name, out_directory, ext_name[1:]], silent = not is_verbose)
 
 def write_model_asset(build_path: str, class_name: str, inst_config: dict[str, RemodelValue]):
 	if "." in build_path:
