@@ -3,7 +3,7 @@ local ARGS = {...}
 local DIRECTORY_FILE_PATH = ARGS[1]
 local FOLDER_CLASS_NAME = ARGS[2]
 local FILE_EXT = ARGS[3]
-print(DIRECTORY_FILE_PATH, FOLDER_CLASS_NAME, FILE_EXT)
+-- print(DIRECTORY_FILE_PATH, FOLDER_CLASS_NAME, FILE_EXT)
 
 -- for some reason string.split doesn't work, so here it is rewritten
 function stringSplit(str, delimiter)

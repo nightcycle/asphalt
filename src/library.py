@@ -31,6 +31,14 @@ def build_library_directory(is_efficient: bool, is_verbose: bool, skip_upload: b
 	lock_data = get_lock_data()
 	dir_path_registry = get_dir_paths_by_media_type()
 	print("editing directory")
+	
+	if is_efficient:
+		for media_type, dir_path in dir_path_registry.items():
+			if os.path.exists(dir_path):
+				if is_verbose:
+					print(f"erasing previous {dir_path}")
+				shutil.rmtree(dir_path)
+				os.makedirs(dir_path)
 
 	if not skip_upload or force_upload:	
 		if is_verbose:
@@ -116,7 +124,7 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 	lock_data = get_lock_data()
 	build_path = config_data['build']['module_path']
 	dir_path_registry = get_dir_paths_by_media_type()
-	
+	module_name = os.path.splitext(os.path.split(build_path)[1])[0]
 	# path_registry = {}
 	module_registry: dict = {}
 	tree_registry: dict = {}
@@ -137,7 +145,7 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 				base, ext = os.path.splitext(file_path)
 				name = os.path.splitext(file_name)[0]
 				roblox_path = base_path + "/" + os.path.splitext(file_path.replace(dir_path+"/", ""))[0]
-				key_path = str(media_type).title() + "/" + roblox_path.replace(base_path+"/", "")
+				key_path = module_name + "/" + str(media_type).title() + "/" + roblox_path.replace(base_path+"/", "")
 				par_dir_path = os.path.split(key_path)[0]
 				is_safe_to_add = True
 				
@@ -202,14 +210,6 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 			if dir_path == path:
 				if not name in registry:
 					registry[name] = mark_as_literal(f"require(script:WaitForChild(\"{name}\"))")
-	
-	if is_efficient:
-		for media_type, dir_path in dir_path_registry.items():
-			if os.path.exists(dir_path):
-				if is_verbose:
-					print(f"erasing previous {dir_path}")
-				shutil.rmtree(dir_path)
-				os.makedirs(dir_path)
 
 	# building modules
 	if is_verbose:
@@ -222,8 +222,7 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 	build_order.sort()
 
 	for path in build_order:
-		if is_verbose:
-			print(f"building {path}")
+
 		registry = module_registry[path]
 
 		tree_content = "return " + from_any(registry, skip_initial_indent=True)
@@ -237,8 +236,9 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 		if rep_var_name in tree_content:
 			content.append(f"local {rep_var_name} = {get_rep_str}")
 		content.append(tree_content)
-		module_build_path = build_base + "/" + path + build_ext
-		
+		module_build_path = os.path.split(build_base)[0] + "/" + path + build_ext
+		if is_verbose:
+			print(f"building {module_build_path}")
 		write_script(module_build_path, "\n".join(content), write_as_directory=True, skip_source_map=True)
 		# if is_verbose:
 		# 	print(f"building {module_build_path}")
