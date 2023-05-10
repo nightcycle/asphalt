@@ -133,65 +133,67 @@ def build_library_module(is_efficient: bool, is_verbose: bool):
 
 	# adding asset including modules
 	for media_type, dir_path in dir_path_registry.items():
-		base_path = ""
 		try:
-			base_path = get_roblox_path_from_env_path(dir_path)
-		except:
-			base_path = get_roblox_path_from_env_path(dir_path+".rbxm")
-		
-		for sub_path, _sub_dir_names, file_names in os.walk(dir_path):
-			for file_name in file_names:
-				file_path = os.path.join(sub_path, file_name).replace("\\", "/")
-				base, ext = os.path.splitext(file_path)
-				name = os.path.splitext(file_name)[0]
-				roblox_path = base_path + "/" + os.path.splitext(file_path.replace(dir_path+"/", ""))[0]
-				key_path = module_name + "/" + str(media_type).title() + "/" + roblox_path.replace(base_path+"/", "")
-				par_dir_path = os.path.split(key_path)[0]
-				is_safe_to_add = True
-				
-				if is_efficient:
-					post_media_path = os.path.splitext("/".join(key_path.split("/")[1:]))[0]
-					if media_type in lock_data:
-						untyped_lock_data: Any = lock_data
-						lock_registry = untyped_lock_data[media_type]
-						if post_media_path in lock_registry:
-							asset_data: AssetData = lock_registry[post_media_path]
-							if not asset_data["is_used"]:
-								is_safe_to_add = False
+			base_path = ""
+			try:
+				base_path = get_roblox_path_from_env_path(dir_path)
+			except:
+				base_path = get_roblox_path_from_env_path(dir_path+".rbxm")
+			
+			for sub_path, _sub_dir_names, file_names in os.walk(dir_path):
+				for file_name in file_names:
+					file_path = os.path.join(sub_path, file_name).replace("\\", "/")
+					base, ext = os.path.splitext(file_path)
+					name = os.path.splitext(file_name)[0]
+					roblox_path = base_path + "/" + os.path.splitext(file_path.replace(dir_path+"/", ""))[0]
+					key_path = module_name + "/" + str(media_type).title() + "/" + roblox_path.replace(base_path+"/", "")
+					par_dir_path = os.path.split(key_path)[0]
+					is_safe_to_add = True
+					
+					if is_efficient:
+						post_media_path = os.path.splitext("/".join(key_path.split("/")[1:]))[0]
+						if media_type in lock_data:
+							untyped_lock_data: Any = lock_data
+							lock_registry = untyped_lock_data[media_type]
+							if post_media_path in lock_registry:
+								asset_data: AssetData = lock_registry[post_media_path]
+								if not asset_data["is_used"]:
+									is_safe_to_add = False
 
-				if is_safe_to_add:
-					if not par_dir_path in module_registry:
-						module_registry[par_dir_path] = {}
+					if is_safe_to_add:
+						if not par_dir_path in module_registry:
+							module_registry[par_dir_path] = {}
 
-					out_type: str | None = None
-					if media_type == "model":
-						out_type = "Instance"
-					elif media_type == "animation":
-						out_type = "Animation"
-					elif media_type == "audio":
-						out_type = "Sound"
-					# elif start_media_type == "Image":
-					elif media_type == "material":
-						out_type = "MaterialVariant"	
-					elif media_type == "particle":	
-						out_type = "ParticleEmitter"	
+						out_type: str | None = None
+						if media_type == "model":
+							out_type = "Instance"
+						elif media_type == "animation":
+							out_type = "Animation"
+						elif media_type == "audio":
+							out_type = "Sound"
+						# elif start_media_type == "Image":
+						elif media_type == "material":
+							out_type = "MaterialVariant"	
+						elif media_type == "particle":	
+							out_type = "ParticleEmitter"	
 
-					type_suffix = ""
-					if out_type != None:
-						type_suffix = f" :: {out_type}"
+						type_suffix = ""
+						if out_type != None:
+							type_suffix = f" :: {out_type}"
 
-					# print(start_media_type, out_type, type_suffix)
+						# print(start_media_type, out_type, type_suffix)
 
-					# print(par_dir_path)
-					if ext == ".txt":
-						with open(file_path, "r") as file:
-							module_registry[par_dir_path][name] = mark_as_literal(file.read() + type_suffix)
+						# print(par_dir_path)
+						if ext == ".txt":
+							with open(file_path, "r") as file:
+								module_registry[par_dir_path][name] = mark_as_literal(file.read() + type_suffix)
+								dpath.new(tree_registry, par_dir_path, {})
+
+						elif ext == ".rbxmx" or ext == ".rbxm":
+							module_registry[par_dir_path][name] = mark_as_literal(get_instance_from_path(roblox_path) + type_suffix)
 							dpath.new(tree_registry, par_dir_path, {})
-
-					elif ext == ".rbxmx" or ext == ".rbxm":
-						module_registry[par_dir_path][name] = mark_as_literal(get_instance_from_path(roblox_path) + type_suffix)
-						dpath.new(tree_registry, par_dir_path, {})
-
+		except:
+			print(f"no rojo path found for {media_type}")
 	# registering middle-modules
 	if is_verbose:
 		print("registering middle modules")
