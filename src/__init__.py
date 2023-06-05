@@ -56,9 +56,11 @@ def main():
 					folder_class = media_data["compression_directory_instance"]
 					media_dir = dir_path_registry[media_type]
 					if os.path.exists(media_dir):
-						if is_verbose:
-							print(f"packing {media_dir} directory into rbxm")
-						group_directory(media_dir, folder_class, ext="rbxm", is_verbose=is_verbose)
+						for sub_dir in os.listdir(media_dir):
+							if os.isdir(sub_dir):
+								if is_verbose:
+									print(f"packing {media_dir} directory into rbxm")
+								group_directory(media_dir, folder_class, ext="rbxm", is_verbose=is_verbose)
 
 	elif sys.argv[1] == "expand":
 
