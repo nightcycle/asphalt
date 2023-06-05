@@ -57,10 +57,11 @@ def main():
 					media_dir = dir_path_registry[media_type]
 					if os.path.exists(media_dir):
 						for sub_dir in os.listdir(media_dir):
-							if os.isdir(sub_dir):
+							full_dir = media_dir+"/"+sub_dir
+							if os.path.isdir(full_dir):
 								if is_verbose:
-									print(f"packing {media_dir} directory into rbxm")
-								group_directory(media_dir, folder_class, ext="rbxm", is_verbose=is_verbose)
+									print(f"packing {full_dir} directory into rbxm")
+								group_directory(full_dir, folder_class, ext="rbxm", is_verbose=is_verbose)
 
 	elif sys.argv[1] == "expand":
 
