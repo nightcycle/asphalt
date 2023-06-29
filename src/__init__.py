@@ -37,7 +37,7 @@ def main() -> None:
 			repo_name = base_path.split("/")[1]
 			release_name = repo_path.split("@")[1]
 			
-			release_data_list: list[dict] = json.loads(requests.get(
+			response = requests.get(
 				url = f"https://api.github.com/repos/{user_name}/{repo_name}/releases",
 				headers={
 					"Authorization": f"Bearer {access_key}",
@@ -45,7 +45,10 @@ def main() -> None:
 					"accept": "json",
 					"Accept-Encoding": "gzip, deflate, br",
 				},
-			).content)
+			)
+			if not response.status_code == 200:
+				raise ValueError(response.content)
+			release_data_list: list[dict] = json.loads(response.content)
 
 			out_dir_path = get_library_local_path(repo_path)
 			zip_path = out_dir_path+".zip"
