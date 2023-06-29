@@ -1,4 +1,3 @@
-1. download external libraries as releases with semantic versioning, instead of local directory paths (for CI/CD support)
 2. It should be able to handle deleted assets, asking for confirmation from the user for ones that require api upload (a tag can overrule this)
 3. The built asset should be included in the hash for determining if a build is necessary
 4. A hash system should be used for the modulescript tree to avoid full-rebuilds

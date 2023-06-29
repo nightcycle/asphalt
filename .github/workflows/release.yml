@@ -17,9 +17,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
-          draft: true
+          tag_name: v1.0.0
+          release_name: v1.0.0
+          draft: false
 
   build_and_publish:
     needs: create_release

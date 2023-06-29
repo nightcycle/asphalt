@@ -8,6 +8,7 @@ from src.util import AssetData
 
 CONFIG_PATH = "asphalt.toml"
 LOCK_PATH = "asphalt.cache"
+ASPHALT_LIBRARY_PATH = ".asphalt-libraries"
 
 INITIAL_LOCK_CONFIG: dict = {
 	"audio": {},
@@ -27,7 +28,7 @@ INITIAL_CONFIG = {
 		"module_path": "src/Shared/Library.luau",
 		"efficient_build_includes_all_local_files": True,
 		"asset_usage_audit_script_directories": ["src"],
-		"importable_lock_files": [],
+		"libraries": {},
 		"publish": {
 			"publish_to_group": True,
 			"entity_id": -1,
@@ -100,6 +101,9 @@ class ConfigData(TypedDict):
 	build: BuildConfigData
 	media: MediaDirectoryConfig
 
+def get_library_local_path(github_repo_path: str) -> str:
+	return ASPHALT_LIBRARY_PATH+"/"+github_repo_path.replace(".", "-").replace("/","_")
+
 def get_config_data() -> ConfigData:
 	with open(CONFIG_PATH, "r") as file:
 		file_content = file.read()
@@ -107,7 +111,14 @@ def get_config_data() -> ConfigData:
 		for media_type, media_config in file_data["media"].items():
 			out = []
 			for v in media_config["sources"]:
-				out.append(os.path.abspath(v).replace("\\", "/"))
+				v = v.replace("\\", "/")
+				start_key = v.split("/")[0]
+				if start_key in file_data["build"]["libraries"]:
+					repo_path = file_data["build"]["libraries"][start_key]
+					local_path = get_library_local_path(repo_path)
+					v = "/".join([local_path] + v.split("/")[1:])
+				out.append(v)
+			print("OUT", out)
 			media_config["sources"] = out
 			
 		return file_data
@@ -132,7 +143,9 @@ def apply_import_data(lock_data: LockData) -> LockData:
 	mutable_lock_data: MutableMapping[Any, Any] = untyped_lock_data
 	config_data = get_config_data()
 	
-	import_file_paths = config_data["build"]["importable_lock_files"]
+	import_file_paths = []
+	for dir_name in os.listdir(ASPHALT_LIBRARY_PATH):
+		import_file_paths.append(ASPHALT_LIBRARY_PATH+"/"+dir_name+"/"+LOCK_PATH)
 
 	for file_path in import_file_paths:
 		with open(file_path, "r") as import_file:
@@ -142,7 +155,7 @@ def apply_import_data(lock_data: LockData) -> LockData:
 					lock_data[media_type] = {}
 
 				for asset_path, asset_data in asset_registry.items():
-					
+					asset_data["source"] = ASPHALT_LIBRARY_PATH+"/"+dir_name + "/src/" + media_type + asset_data["source"].split(media_type)[1]
 					lock_data[media_type][asset_path] = asset_data
 
 	return untyped_lock_data

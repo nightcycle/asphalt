@@ -3,7 +3,7 @@ import json
 import re
 from src.util import get_file_hash, APPROVED_EXPORT_EXTENSIONS_REGISTRY, AssetData
 from luau.roblox.rojo import get_roblox_path_from_env_path
-from src.config import get_config_data, MediaType, get_lock_data, set_lock_data, apply_import_data, LOCK_PATH
+from src.config import get_config_data, MediaType, get_lock_data, set_lock_data, apply_import_data, LOCK_PATH, ASPHALT_LIBRARY_PATH
 from typing import TypedDict, Any
 
 
@@ -116,13 +116,11 @@ def get_used_paths(is_verbose=False) -> dict[MediaType, list[str]]:
 		if is_verbose:
 			print("appending local files to usage list")
 
-		local_path = os.path.abspath("")
 		for media_type, possible_media_config in config_data["media"].items():
 			untyped_media_source: Any = possible_media_config
 			media_sources: list[str] = untyped_media_source["sources"]
 			for media_source in media_sources:
-				abs_media_source = os.path.abspath(media_source)
-				if os.path.commonprefix([abs_media_source, local_path]) == local_path:
+				if not ASPHALT_LIBRARY_PATH in media_source:
 					for sub_path, sub_dir_names, file_names in os.walk(media_source):
 						for file_name in file_names:
 							file_path = os.path.join(sub_path, file_name).replace("\\", "/")
