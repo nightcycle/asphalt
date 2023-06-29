@@ -7,7 +7,7 @@ from typing import TypedDict, Literal, Any, Union, MutableMapping
 from src.util import AssetData
 
 CONFIG_PATH = "asphalt.toml"
-LOCK_PATH = "asphalt.lock"
+LOCK_PATH = "asphalt.cache"
 
 INITIAL_LOCK_CONFIG: dict = {
 	"audio": {},
@@ -91,9 +91,9 @@ class PublishConfigData(TypedDict):
 class BuildConfigData(TypedDict):
 	dir_path: str
 	module_path: str
+	libraries: dict[str, str]
 	efficient_build_includes_all_local_files: bool
 	asset_usage_audit_script_directories: list[str]
-	importable_lock_files: list[str]
 	publish: PublishConfigData
 
 class ConfigData(TypedDict):
@@ -143,31 +143,6 @@ def apply_import_data(lock_data: LockData) -> LockData:
 
 				for asset_path, asset_data in asset_registry.items():
 					
-					# current_asset_id: None | int = None
-					# current_hash: None | str = None
-					# if "asset_id" in asset_data:
-					# 	current_asset_id = asset_data["asset_id"]
-					# 	current_hash = asset_data["hash"]
-					
-					# prior_asset_id: None | int = None
-					# prior_hash: None | str = None
-
-					# if asset_path in lock_data[media_type]:
-					# 	prior_asset_data: AssetData = lock_data[media_type][asset_path]
-						
-					# 	if "asset_id" in prior_asset_data:
-					# 		prior_asset_id = prior_asset_data["asset_id"]
-						
-					# 	if "hash" in prior_asset_data:
-					# 		prior_hash = prior_asset_data["hash"]
-
-					# if prior_asset_id == None and current_asset_id != None:
-					# 	asset_data["update_needed"] = False
-					# else:
-					# 	if current_asset_id == None:
-					# 		asset_data["update_needed"] = True
-					# 	else:
-					# 		asset_data["update_needed"] = False
 					lock_data[media_type][asset_path] = asset_data
 
 	return untyped_lock_data

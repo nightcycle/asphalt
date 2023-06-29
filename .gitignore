@@ -130,7 +130,7 @@ dmypy.json
 
 # other
 asphalt.toml
-media
+asset
 lib
 test.rbxmx
 default.project.json

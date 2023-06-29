@@ -1,0 +1,7 @@
+1. download external libraries as releases with semantic versioning, instead of local directory paths (for CI/CD support)
+2. It should be able to handle deleted assets, asking for confirmation from the user for ones that require api upload (a tag can overrule this)
+3. The built asset should be included in the hash for determining if a build is necessary
+4. A hash system should be used for the modulescript tree to avoid full-rebuilds
+5. The top-level instance class should be retrieved from each embedded instance when possible
+6. Integrate the split-by-material and split-by-layer functions as high-level commands.
+7. Add warning for if asset has / in it
