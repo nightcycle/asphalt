@@ -25,7 +25,7 @@ ROBLOX_ASSET_KEY_CREDENTIAL_USERNAME = os.path.abspath("src")
 INITIAL_CONFIG = {
 	"build": {
 		"dir_path": "lib",
-		"module_path": "src/Shared/Library.luau",
+		"module_path": "src/Shared/Asphalt.luau",
 		"efficient_build_includes_all_local_files": True,
 		"asset_usage_audit_script_directories": ["src"],
 		"libraries": {},
@@ -155,7 +155,7 @@ def apply_import_data(lock_data: LockData) -> LockData:
 					lock_data[media_type] = {}
 
 				for asset_path, asset_data in asset_registry.items():
-					asset_data["source"] = ASPHALT_LIBRARY_PATH+"/"+dir_name + "/src/" + media_type + asset_data["source"].split(media_type)[1]
+					asset_data["source"] = ASPHALT_LIBRARY_PATH+"/"+dir_name + "/asset/" + media_type + asset_data["source"].split(media_type)[1]
 					lock_data[media_type][asset_path] = asset_data
 
 	return untyped_lock_data
